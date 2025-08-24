@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -32,6 +31,7 @@ model User {
   password                String            // Mapeado de USU_SENHA [cite: 288]
   notificationPreference  String?           // Mapeado de USU_PREFERENCIANOTIFICACAO, opcional 
   createdAt               DateTime          @default(now()) // Mapeado de USU_DATACADASTRO 
+  active                  Boolean           @default(true)
 
   // Relacionamentos [cite: 304, 306, 308, 310, 311]
   transactions            Transaction[]
