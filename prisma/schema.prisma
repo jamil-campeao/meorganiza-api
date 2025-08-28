@@ -77,6 +77,7 @@ model Investment {
   quantity          Decimal   @db.Decimal(10, 4) // Mapeado de INV_QUANTIDADE [cite: 291]
   acquisitionValue  Decimal   @db.Decimal(10, 2) // Mapeado de INV_VALORAQUISICAO [cite: 292]
   acquisitionDate   DateTime  // Mapeado de INV_DATAAQUISICAO [cite: 292]
+  active            Boolean   @default(true)
 
   // Relacionamento com User [cite: 306]
   user    User @relation(fields: [userId], references: [id])
