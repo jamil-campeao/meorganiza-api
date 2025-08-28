@@ -63,6 +63,7 @@ model Category {
   id          Int             @id @default(autoincrement()) // Mapeado de CAT_CODIGO [cite: 301]
   description String          // Mapeado de CAT_DESCRICAO [cite: 302]
   type        TransactionType // Mapeado de CAT_TIPO [cite: 302]
+  active      Boolean         @default(true)
   
   // Relacionamentos
   transactions Transaction[]
