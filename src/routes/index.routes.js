@@ -13,7 +13,7 @@ const router = Router();
 router.use("/user", userRoutes);
 router.use("/login", loginRoutes);
 router.use("/transaction", transactionRoutes);
-router.use("/category", categoryRoutes);
+router.use("/categories", categoryRoutes);
 router.use("/investment", investmentRoutes);
 router.use("/notification", notificationRoutes);
 router.use("/bankstatement", bankstatementRoutes);
