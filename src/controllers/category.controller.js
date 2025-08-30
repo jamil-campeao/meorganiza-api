@@ -36,7 +36,7 @@ export const getAllCategories = async (req, res) => {
         userId: userId,
       },
       orderBy: {
-        name: "asc",
+        description: "asc",
       },
     });
 
@@ -74,12 +74,12 @@ export const getCategoryById = async (req, res) => {
 export const updateCategory = async (req, res) => {
   const userId = req.user.id;
   const categoryId = parseInt(req.params.id);
-  const { name } = req.body;
+  const { description, type } = req.body;
 
-  if (!name) {
+  if (!description || !type) {
     return res
       .status(400)
-      .json({ message: "O nome da categoria é obrigatório" });
+      .json({ message: "Todos os campos são obrigatórios." });
   }
 
   try {
@@ -100,7 +100,8 @@ export const updateCategory = async (req, res) => {
     const updatedCategory = await prisma.category.update({
       where: { id: categoryId },
       data: {
-        name,
+        description,
+        type: TransactionType[type],
       },
     });
 
