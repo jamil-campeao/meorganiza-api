@@ -91,7 +91,9 @@ export const updateCategory = async (req, res) => {
       return res.status(404).json({ message: "Categoria não encontrada." });
     }
 
-    if (!category.userId !== userId) {
+    console.log(category.userId);
+    console.log(userId);
+    if (category.userId !== userId) {
       return res
         .status(403)
         .json({ message: "Categoria não pertence ao usuário." });
