@@ -39,6 +39,7 @@ model User {
   notifications           Notification[]
   bankStatements          BankStatement[]
   balanceForecasts        BalanceForecast[]
+  category                Category[]
 }
 
 // Model de Transação, baseado na tabela 'Transação'[cite: 299].
@@ -64,6 +65,11 @@ model Category {
   description String          // Mapeado de CAT_DESCRICAO [cite: 302]
   type        TransactionType // Mapeado de CAT_TIPO [cite: 302]
   active      Boolean         @default(true)
+
+  // Relacionamento com User [cite: 304]
+  user        User            @relation(fields: [userId], references: [id])
+  userId      Int
+
   
   // Relacionamentos
   transactions Transaction[]

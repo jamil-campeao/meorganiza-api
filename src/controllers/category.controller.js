@@ -1,20 +1,22 @@
 import prisma from "../db/client.js";
+import { TransactionType } from "@prisma/client";
 
 export const insertCategory = async (req, res) => {
   const userId = req.user.id;
-  const { name } = req.body;
+  const { description, type } = req.body;
 
-  if (!name) {
+  if (!description || !type) {
     return res
       .status(400)
-      .json({ message: "O nome da categoria é obrigatório" });
+      .json({ message: "Todos os campos são obrigatórios." });
   }
 
   try {
     const newCategory = await prisma.category.create({
       data: {
-        name,
-        userId,
+        description: description,
+        type: TransactionType[type],
+        userId: userId,
       },
     });
 
@@ -47,6 +49,7 @@ export const getAllCategories = async (req, res) => {
 
 export const getCategoryById = async (req, res) => {
   const categoryId = parseInt(req.params.id);
+  const userId = req.user.id;
 
   try {
     const category = await prisma.category.findUnique({
@@ -54,6 +57,12 @@ export const getCategoryById = async (req, res) => {
         id: categoryId,
       },
     });
+
+    if (category.userId !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Categoria não pertence ao usuário." });
+    }
 
     return res.status(200).json(category);
   } catch (error) {

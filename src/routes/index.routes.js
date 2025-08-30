@@ -6,6 +6,7 @@ import categoryRoutes from "./category.routes.js";
 import investmentRoutes from "./investment.routes.js";
 import notificationRoutes from "./notification.routes.js";
 import bankstatementRoutes from "./bankstatements.routes.js";
+import balanceForecastsRoutes from "./balanceforecasts.routes.js";
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use("/category", categoryRoutes);
 router.use("/investment", investmentRoutes);
 router.use("/notification", notificationRoutes);
 router.use("/bankstatement", bankstatementRoutes);
+router.use("/balanceforecast", balanceForecastsRoutes);
 
 export default router;
