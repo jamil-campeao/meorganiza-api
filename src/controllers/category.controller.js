@@ -134,6 +134,8 @@ export const deleteCategory = async (req, res) => {
     await prisma.category.delete({
       where: { id: categoryId },
     });
+
+    return res.status(200).json({ message: "Categoria excluída com sucesso." });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Erro ao excluir a categoria." });
