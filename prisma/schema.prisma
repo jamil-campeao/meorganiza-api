@@ -1,22 +1,13 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql" // Mude de "mysql" para "postgresql"
   url      = env("DATABASE_URL")
 }
 
 // --- Enums ---
-// Usar Enums garante a consistência dos dados para campos de tipo.
-// Baseado nos campos CAT_TIPO e TR_TIPO.
 enum TransactionType {
   RECEITA // "receita"
   DESPESA // "despesa"
@@ -24,95 +15,88 @@ enum TransactionType {
 
 // --- Models ---
 
-// Model de Usuário, baseado na tabela 'Usuário'[cite: 287].
 model User {
-  id                      Int               @id @default(autoincrement()) // Mapeado de USU_CODIGO [cite: 287]
-  name                    String            // Mapeado de USU_NOME [cite: 288]
-  email                   String            @unique // Mapeado de USU_EMAIL [cite: 288]
-  password                String            // Mapeado de USU_SENHA [cite: 288]
-  notificationPreference  String?           // Mapeado de USU_PREFERENCIANOTIFICACAO, opcional 
-  createdAt               DateTime          @default(now()) // Mapeado de USU_DATACADASTRO 
+  id                      Int               @id @default(autoincrement()) 
+  name                    String            
+  email                   String            @unique 
+  password                String            
+  notificationPreference  String?           
+  createdAt               DateTime          @default(now())
+  active                  Boolean           @default(true)
 
-  // Relacionamentos [cite: 304, 306, 308, 310, 311]
   transactions            Transaction[]
   investments             Investment[]
   notifications           Notification[]
   bankStatements          BankStatement[]
   balanceForecasts        BalanceForecast[]
+  category                Category[]
 }
 
-// Model de Transação, baseado na tabela 'Transação'[cite: 299].
 model Transaction {
-  id          Int             @id @default(autoincrement()) // Mapeado de TR_CODIGO [cite: 299]
-  type        TransactionType // Mapeado de TR_TIPO [cite: 300]
-  value       Decimal         @db.Decimal(10, 2) // Mapeado de TR_VALOR. Decimal é recomendado para valores financeiros [cite: 300]
-  date        DateTime        // Mapeado de TR_DATA [cite: 300]
-  description String          // Mapeado de TR_DESCRICAO [cite: 300]
+  id          Int             @id @default(autoincrement()) 
+  type        TransactionType
+  value       Decimal         @db.Decimal(10, 2) 
+  date        DateTime        
+  description String          
   
-  // Relacionamento com User [cite: 304]
   user        User            @relation(fields: [userId], references: [id])
   userId      Int
-  
-  // Relacionamento com Category [cite: 305]
   category    Category        @relation(fields: [categoryId], references: [id])
   categoryId  Int
 }
 
-// Model de Categoria, baseado na tabela 'Categoria'[cite: 301].
+
 model Category {
-  id          Int             @id @default(autoincrement()) // Mapeado de CAT_CODIGO [cite: 301]
-  description String          // Mapeado de CAT_DESCRICAO [cite: 302]
-  type        TransactionType // Mapeado de CAT_TIPO [cite: 302]
-  
-  // Relacionamentos
+  id          Int             @id @default(autoincrement())
+  description String          
+  type        TransactionType 
+  active      Boolean         @default(true)
+  user        User            @relation(fields: [userId], references: [id])
+  userId      Int
+
   transactions Transaction[]
 }
 
-// Model de Investimento, baseado na tabela 'Investimentos'[cite: 290].
-model Investment {
-  id                Int       @id @default(autoincrement()) // Mapeado de INV_CODIGO [cite: 290]
-  type              String    // Mapeado de INV_TIPO [cite: 291]
-  description       String    // Mapeado de INV_DESCRICAO [cite: 291]
-  quantity          Decimal   @db.Decimal(10, 4) // Mapeado de INV_QUANTIDADE [cite: 291]
-  acquisitionValue  Decimal   @db.Decimal(10, 2) // Mapeado de INV_VALORAQUISICAO [cite: 292]
-  acquisitionDate   DateTime  // Mapeado de INV_DATAAQUISICAO [cite: 292]
 
-  // Relacionamento com User [cite: 306]
+model Investment {
+  id                Int       @id @default(autoincrement())
+  type              String    
+  description       String   
+  quantity          Decimal   @db.Decimal(10, 4) 
+  acquisitionValue  Decimal   @db.Decimal(10, 2) 
+  acquisitionDate   DateTime  
+  active            Boolean   @default(true)
+
   user    User @relation(fields: [userId], references: [id])
   userId  Int
 }
 
-// Model de Notificação, baseado na tabela 'Notificação'[cite: 293].
-model Notification {
-  id      Int       @id @default(autoincrement()) // Mapeado de NOT_CODIGO [cite: 293]
-  message String    // Mapeado de NOT_MENSAGEM [cite: 294]
-  sentAt  DateTime  // Mapeado de NOT_DATAENVIO [cite: 294]
-  read    Boolean   @default(false) // Mapeado de NOT_LIDA [cite: 294]
 
-  // Relacionamento com User [cite: 308]
+model Notification {
+  id      Int       @id @default(autoincrement()) 
+  message String   
+  sentAt  DateTime  
+  read    Boolean   @default(false) 
+
   user    User      @relation(fields: [userId], references: [id])
   userId  Int
 }
 
-// Model de Extrato Bancário, baseado na tabela 'Extrato Bancário'[cite: 295].
 model BankStatement {
-  id          Int       @id @default(autoincrement()) // Mapeado de EXB_CODIGO [cite: 295]
-  fileType    String    // Mapeado de EXB_TIPOARQUIVO (ex: CSV, OFX) [cite: 296]
-  importDate  DateTime  // Mapeado de EXB_DATAIMPORTACAO [cite: 296]
-  fileName    String    // Mapeado de EXB_NOMEARQUIVO [cite: 296]
+  id          Int       @id @default(autoincrement()) 
+  fileType    String    
+  importDate  DateTime 
+  fileName    String  
 
-  // Relacionamento com User [cite: 310]
   user   User @relation(fields: [userId], references: [id])
   userId Int
 }
 
-// Model de Previsão de Saldo, baseado na tabela 'Previsão de Saldo'[cite: 297].
 model BalanceForecast {
-  id            Int      @id @default(autoincrement()) // Mapeado de PRV_CODIGO [cite: 297]
-  futureBalance Decimal  @db.Decimal(10, 2) // Mapeado de PRV_SALDOFUTURO [cite: 298]
-  forecastDate  DateTime // Mapeado de PRV_DATAPREVISTA [cite: 298]
+  id            Int      @id @default(autoincrement()) 
+  futureBalance Decimal  @db.Decimal(10, 2)
+  forecastDate  DateTime 
   
-  // Relacionamento com User [cite: 311]
   user   User @relation(fields: [userId], references: [id])
   userId Int
 }
