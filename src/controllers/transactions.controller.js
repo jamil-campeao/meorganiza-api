@@ -58,6 +58,7 @@ export const getAllTransactions = async (req, res) => {
 
 export const getTransactionById = async (req, res) => {
   const transactionId = parseInt(req.params.id);
+  const userId = req.user.id;
 
   try {
     const transaction = await prisma.transaction.findUnique({
@@ -68,6 +69,16 @@ export const getTransactionById = async (req, res) => {
         category: true,
       },
     });
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transação não encontrada." });
+    }
+
+    if (transaction.userId !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Transação não pertence ao usuário." });
+    }
 
     return res.status(200).json(transaction);
   } catch (error) {

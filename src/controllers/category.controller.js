@@ -58,6 +58,10 @@ export const getCategoryById = async (req, res) => {
       },
     });
 
+    if (!category) {
+      return res.status(404).json({ message: "Categoria não encontrada." });
+    }
+
     if (category.userId !== userId) {
       return res
         .status(403)
