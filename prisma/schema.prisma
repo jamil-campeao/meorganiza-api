@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // Mude de "mysql" para "postgresql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -11,6 +11,19 @@ datasource db {
 enum TransactionType {
   RECEITA // "receita"
   DESPESA // "despesa"
+  TRANSFERENCIA 
+}
+
+enum AccountType {
+  CONTA_CORRENTE
+  CONTA_POUPANCA
+  INVESTIMENTO
+  OUTRO
+}
+
+enum CardType {
+  CREDITO
+  DEBITO
 }
 
 // --- Models ---
@@ -30,6 +43,8 @@ model User {
   bankStatements          BankStatement[]
   balanceForecasts        BalanceForecast[]
   category                Category[]
+  accounts                Account[]
+  cards                   Card[]
 }
 
 model Transaction {
@@ -43,6 +58,12 @@ model Transaction {
   userId      Int
   category    Category        @relation(fields: [categoryId], references: [id])
   categoryId  Int
+  account     Account?        @relation(fields: [accountId], references: [id])
+  accountId   Int?
+  card        Card?           @relation(fields: [cardId], references: [id])
+  cardId      Int?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+  invoiceId Int?
 }
 
 
@@ -99,4 +120,61 @@ model BalanceForecast {
   
   user   User @relation(fields: [userId], references: [id])
   userId Int
+}
+
+model Bank {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  logo String?
+
+  accounts Account[]
+}
+
+model Account {
+  id      Int         @id @default(autoincrement())
+  name    String
+  type    AccountType
+  balance Decimal     @db.Decimal(10, 2)
+  active  Boolean     @default(true)
+
+  user    User        @relation(fields: [userId], references: [id])
+  userId  Int
+  bank    Bank        @relation(fields: [bankId], references: [id])
+  bankId  Int
+
+  transactions Transaction[]
+  cards        Card[]
+}
+
+model Card {
+  id          Int      @id @default(autoincrement())
+  name        String
+  type        CardType
+  limit       Decimal  @db.Decimal(10, 2)
+  closingDay  Int      // Dia do fechamento da fatura
+  dueDate     Int      // Dia do vencimento da fatura
+  active      Boolean  @default(true)
+
+  user    User    @relation(fields: [userId], references: [id])
+  userId  Int
+  account Account @relation(fields: [accountId], references: [id])
+  accountId Int
+
+  invoices Invoice[]
+  transactions Transaction[]
+}
+
+model Invoice {
+  id          Int       @id @default(autoincrement())
+  month       Int       // Mês da fatura (1-12)
+  year        Int       // Ano da fatura
+  totalAmount Decimal   @db.Decimal(10, 2)
+  isPaid      Boolean   @default(false)
+
+  card        Card      @relation(fields: [cardId], references: [id])
+  cardId      Int
+
+  transactions Transaction[]
+
+  @@unique([cardId, month, year]) // Garante que só exista uma fatura por cartão, mês e ano
 }

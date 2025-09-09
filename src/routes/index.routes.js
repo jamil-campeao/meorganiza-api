@@ -7,6 +7,10 @@ import investmentRoutes from "./investment.routes.js";
 import notificationRoutes from "./notification.routes.js";
 import bankstatementRoutes from "./bankstatements.routes.js";
 import balanceForecastsRoutes from "./balanceforecasts.routes.js";
+import accountRoutes from "./account.routes.js";
+import bankRoutes from "./bank.routes.js";
+import cardRoutes from "./card.routes.js";
+import invoiceRoutes from "./invoice.routes.js";
 
 const router = Router();
 
@@ -18,5 +22,9 @@ router.use("/investment", investmentRoutes);
 router.use("/notification", notificationRoutes);
 router.use("/bankstatement", bankstatementRoutes);
 router.use("/balanceforecast", balanceForecastsRoutes);
+router.use("/account", accountRoutes);
+router.use("/bank", bankRoutes);
+router.use("/card", cardRoutes);
+router.use("/invoice", invoiceRoutes);
 
 export default router;
