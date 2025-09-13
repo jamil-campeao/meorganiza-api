@@ -123,8 +123,8 @@ model BalanceForecast {
 }
 
 model Bank {
-  id   Int    @id @default(autoincrement())
-  name String @unique
+  id   String    @id
+  name String
   logo String?
 
   accounts Account[]
@@ -140,7 +140,7 @@ model Account {
   user    User        @relation(fields: [userId], references: [id])
   userId  Int
   bank    Bank        @relation(fields: [bankId], references: [id])
-  bankId  Int
+  bankId  String
 
   transactions Transaction[]
   cards        Card[]

@@ -18,6 +18,6 @@ router.get("/", getAllCards);
 router.get("/:id", getCardById);
 router.put("/:id", updateCard);
 router.delete("/:id", deleteCard);
-router.put("/inactive/:id", inactiveCard);
+router.patch("/inactive/:id", inactiveCard);
 
 export default router;
