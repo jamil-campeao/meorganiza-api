@@ -95,8 +95,6 @@ export const updateCategory = async (req, res) => {
       return res.status(404).json({ message: "Categoria não encontrada." });
     }
 
-    console.log(category.userId);
-    console.log(userId);
     if (category.userId !== userId) {
       return res
         .status(403)
@@ -167,14 +165,16 @@ export const inactiveCategory = async (req, res) => {
         .json({ message: "Categoria não pertence ao usuário." });
     }
 
-    await prisma.category.update({
+    const updatedCategory = await prisma.category.update({
       where: { id: categoryId },
       data: {
         active: category.active ? false : true,
       },
     });
+
+    return res.status(200).json(updatedCategory);
   } catch (error) {
-    console.error(error);
+    console.error("erro", error);
     return res
       .status(500)
       .json({ message: "Erro ao alterar status da categoria." });
