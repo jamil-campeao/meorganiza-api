@@ -78,7 +78,7 @@ export const updateAccount = async (req, res) => {
         name,
         type: AccountType[type],
         balance: parseFloat(balance),
-        bankId: parseInt(bankId),
+        bankId: String(bankId),
       },
     });
 
@@ -116,6 +116,13 @@ export const deleteAccount = async (req, res) => {
 
     return res.status(200).json({ message: "Conta excluída com sucesso." });
   } catch (error) {
+    // Verifica se o erro é de violação de chave estrangeira
+    if (error.code === "P2003") {
+      return res.status(409).json({
+        message:
+          "Esta conta não pode ser excluída pois está vinculada a transações ou cartões. Por favor, inative-a.",
+      });
+    }
     console.error(error);
     return res.status(500).json({ message: "Erro ao excluir a conta." });
   }
