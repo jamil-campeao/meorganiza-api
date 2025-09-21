@@ -45,6 +45,7 @@ model User {
   category                Category[]
   accounts                Account[]
   cards                   Card[]
+  bills                   Bill[]
 }
 
 model Transaction {
@@ -76,6 +77,7 @@ model Category {
   userId      Int
 
   transactions Transaction[]
+  bills        Bill[]
 }
 
 
@@ -177,4 +179,20 @@ model Invoice {
   transactions Transaction[]
 
   @@unique([cardId, month, year]) // Garante que só exista uma fatura por cartão, mês e ano
+}
+
+model Bill {
+  id          Int       @id @default(autoincrement())
+  description String
+  amount      Decimal   @db.Decimal(10, 2)
+  dueDate     DateTime
+  isPaid      Boolean   @default(false)
+  recurring   String? // ex: monthly, yearly
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  categoryId  Int
+  category    Category  @relation(fields: [categoryId], references: [id])
+  active      Boolean   @default(true)
+
+  @@index([userId])
 }
