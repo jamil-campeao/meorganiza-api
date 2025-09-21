@@ -36,11 +36,9 @@ export const insertTransaction = async (req, res) => {
   // --- Lógica para RECEITA ---
   if (type === TransactionType.RECEITA) {
     if (!type || !value || !date || !description || !categoryId || !accountId) {
-      return res
-        .status(400)
-        .json({
-          message: "Para receitas, todos os campos e a conta são obrigatórios.",
-        });
+      return res.status(400).json({
+        message: "Para receitas, todos os campos e a conta são obrigatórios.",
+      });
     }
 
     try {
@@ -79,20 +77,16 @@ export const insertTransaction = async (req, res) => {
       !categoryId ||
       (!accountId && !cardId)
     ) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Para despesas, todos os campos e uma conta ou cartão são obrigatórios.",
-        });
+      return res.status(400).json({
+        message:
+          "Para despesas, todos os campos e uma conta ou cartão são obrigatórios.",
+      });
     }
     if (accountId && cardId) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "A despesa não pode estar associada a uma conta e a um cartão simultaneamente.",
-        });
+      return res.status(400).json({
+        message:
+          "A despesa não pode estar associada a uma conta e a um cartão simultaneamente.",
+      });
     }
 
     try {
@@ -126,11 +120,9 @@ export const insertTransaction = async (req, res) => {
           where: { id: parseInt(cardId) },
         });
         if (!card || card.userId !== userId) {
-          return res
-            .status(404)
-            .json({
-              message: "Cartão não encontrado ou não pertence ao usuário.",
-            });
+          return res.status(404).json({
+            message: "Cartão não encontrado ou não pertence ao usuário.",
+          });
         }
 
         // Calcula a data da fatura
@@ -178,40 +170,67 @@ export const insertTransaction = async (req, res) => {
   // --- Lógica para TRANSFERENCIA ---
   if (type === TransactionType.TRANSFERENCIA) {
     if (!value || !date || !accountId || !targetAccountId) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Para transferências, valor, data, conta de origem e conta de destino são obrigatórios.",
-        });
+      return res.status(400).json({
+        message:
+          "Para transferências, valor, data, conta de origem e conta de destino são obrigatórios.",
+      });
     }
     if (accountId === targetAccountId) {
-      return res
-        .status(400)
-        .json({
-          message: "A conta de origem e destino não podem ser a mesma.",
-        });
+      return res.status(400).json({
+        message: "A conta de origem e destino não podem ser a mesma.",
+      });
     }
 
     try {
-      const [originAccount, targetAccount] = await prisma.$transaction([
-        prisma.account.update({
+      await prisma.$transaction(async (prisma) => {
+        // 1. Valida se a conta de ORIGEM existe e pertence ao usuário
+        const originAccount = await prisma.account.findFirst({
+          where: {
+            id: parseInt(accountId),
+            userId: userId,
+          },
+        });
+
+        if (!originAccount) {
+          throw new Error(
+            "Conta de origem não encontrada ou não pertence ao usuário."
+          );
+        }
+        // Valida se a conta de DESTINO existe e pertence ao usuário
+        const targetAccount = await prisma.account.findFirst({
+          where: {
+            id: parseInt(targetAccountId),
+            userId: userId,
+          },
+        });
+
+        if (!targetAccount) {
+          throw new Error(
+            "Conta de destino não encontrada ou não pertence ao usuário."
+          );
+        }
+
+        // 2. Executa as atualizações de saldo
+        // Debita da conta de origem
+        await prisma.account.update({
           where: { id: parseInt(accountId) },
           data: { balance: { decrement: transactionValue } },
-        }),
-        prisma.account.update({
+        });
+        // Credita na conta de destino
+        await prisma.account.update({
           where: { id: parseInt(targetAccountId) },
           data: { balance: { increment: transactionValue } },
-        }),
-      ]);
+        });
+      });
+
       return res
         .status(200)
         .json({ message: "Transferência realizada com sucesso." });
     } catch (error) {
       console.error(error);
-      return res
-        .status(500)
-        .json({ message: "Erro ao realizar a transferência." });
+      return res.status(500).json({
+        message: error.message || "Erro ao realizar a transferência.",
+      });
     }
   }
 
@@ -228,6 +247,8 @@ export const getAllTransactions = async (req, res) => {
       },
       include: {
         category: true,
+        card: true,
+        account: true,
       },
       orderBy: {
         date: "desc",
