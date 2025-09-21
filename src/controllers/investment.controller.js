@@ -201,6 +201,10 @@ export const inactiveInvestment = async (req, res) => {
         active: investment.active ? false : true,
       },
     });
+
+    return res
+      .status(200)
+      .json({ message: "Status do investimento alterado." });
   } catch (error) {
     console.error(error);
     return res
