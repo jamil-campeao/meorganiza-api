@@ -11,6 +11,7 @@ import accountRoutes from "./account.routes.js";
 import bankRoutes from "./bank.routes.js";
 import cardRoutes from "./card.routes.js";
 import invoiceRoutes from "./invoice.routes.js";
+import billRoutes from "./bill.routes.js";
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use("/account", accountRoutes);
 router.use("/bank", bankRoutes);
 router.use("/card", cardRoutes);
 router.use("/invoice", invoiceRoutes);
+router.use("/bill", billRoutes);
 
 export default router;
