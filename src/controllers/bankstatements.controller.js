@@ -1,88 +1,69 @@
 import prisma from "../db/client.js";
+import Papa from "papaparse";
 
-export const insertBankStatement = async (req, res) => {
+export const uploadBankStatement = async (req, res) => {
   const userId = req.user.id;
-  const { fileName, fileType, importDate } = req.body;
+  const { accountId, categoryId } = req.body;
 
-  if (!fileName || !fileType || !importDate) {
+  if (!req.file) {
+    return res.status(400).json({ message: "Nenhum arquivo enviado." });
+  }
+
+  if (!accountId || !categoryId) {
     return res
       .status(400)
-      .json({ message: "Todos os campos são obrigatórios." });
+      .json({ message: "Conta e categoria padrão são obrigatórias." });
   }
 
   try {
-    const newBankStatement = await prisma.bankStatement.create({
-      data: {
-        fileName: fileName,
-        fileType: fileType,
-        importDate: new Date(importDate),
-        user: {
-          connect: { id: userId },
-        },
+    const fileContent = req.file.buffer.toString("utf-8");
+
+    Papa.parse(fileContent, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        const transactionsToCreate = results.data.map((row) => ({
+          description: row.Descricao,
+          value: parseFloat(row.Valor),
+          date: new Date(row.Data),
+          type: parseFloat(row.Valor) >= 0 ? "RECEITA" : "DESPESA",
+          userId: userId,
+          accountId: parseInt(accountId),
+          categoryId: parseInt(categoryId),
+        }));
+
+        await prisma.transaction.createMany({
+          data: transactionsToCreate,
+        });
+
+        // Atualiza o saldo da conta
+        const totalAmount = transactionsToCreate.reduce(
+          (acc, t) => acc + t.value,
+          0
+        );
+        await prisma.account.update({
+          where: { id: parseInt(accountId) },
+          data: { balance: { increment: totalAmount } },
+        });
+
+        res
+          .status(200)
+          .json({ message: "Extrato importado e transações criadas!" });
       },
     });
-
-    return res.status(201).json(newBankStatement);
   } catch (error) {
     console.error(error);
-    return res
-      .status(500)
-      .json({ message: "Erro ao criar o extrato bancário." });
+    return res.status(500).json({ message: "Erro ao processar o extrato." });
   }
 };
 
 export const getAllBankStatements = async (req, res) => {
-  const userId = req.user.id;
-
-  try {
-    const bankStatements = await prisma.bankStatement.findMany({
-      where: { userId: userId },
-      orderBy: { importDate: "desc" },
-    });
-
-    return res.status(200).json(bankStatements);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Erro ao buscar os extratos." });
-  }
+  // Esta função pode ser mantida para histórico, se desejar.
+  // Por enquanto, vamos retornar um array vazio.
+  res.status(200).json([]);
 };
 
 export const deleteBankStatement = async (req, res) => {
-  const userId = req.user.id;
-  const bankStatementId = parseInt(req.params.id);
-
-  if (!bankStatementId) {
-    return res
-      .status(400)
-      .json({ message: "ID do extrato bancário obrigatório." });
-  }
-
-  try {
-    const banckStatement = await prisma.bankStatement.findUnique({
-      where: { id: bankStatementId },
-    });
-
-    if (!banckStatement) {
-      return res
-        .status(404)
-        .json({ message: "Extrato bancário não encontrado." });
-    }
-
-    if (banckStatement.userId !== userId) {
-      return res
-        .status(403)
-        .json({ message: "Extrato bancário não pertence ao usuário." });
-    }
-
-    await prisma.bankStatement.delete({
-      where: { id: bankStatementId },
-    });
-
-    return res
-      .status(200)
-      .json({ message: "Extrato bancário excluído com sucesso." });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Erro ao excluir o extrato." });
-  }
+  // Manter se for usar histórico
+  res.status(204).send();
 };

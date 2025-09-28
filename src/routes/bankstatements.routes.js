@@ -1,16 +1,18 @@
 import { Router } from "express";
+import multer from "multer";
 import {
-  insertBankStatement,
+  uploadBankStatement,
   getAllBankStatements,
   deleteBankStatement,
 } from "../controllers/bankstatements.controller.js";
 import { authenticateUser } from "../services/authentication.js";
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(authenticateUser);
 
-router.post("/", insertBankStatement);
+router.post("/", upload.single("file"), uploadBankStatement);
 router.get("/", getAllBankStatements);
 router.delete("/:id", deleteBankStatement);
 
