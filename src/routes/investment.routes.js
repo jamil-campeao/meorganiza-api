@@ -7,6 +7,7 @@ import {
   inactiveInvestment,
   insertInvestment,
   updateInvestment,
+  getInvestmentSummary,
 } from "../controllers/investment.controller.js";
 
 const router = Router();
@@ -14,6 +15,7 @@ const router = Router();
 router.use(authenticateUser);
 
 router.get("/", getAllInvestments);
+router.get("/summary", getInvestmentSummary);
 router.get("/:id", getInvestmentById);
 router.post("/", insertInvestment);
 router.put("/:id", updateInvestment);
