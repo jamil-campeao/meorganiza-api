@@ -65,6 +65,7 @@ model Transaction {
   cardId      Int?
   invoice   Invoice? @relation(fields: [invoiceId], references: [id])
   invoiceId Int?
+  bills     BillPayment[]
 }
 
 
@@ -146,6 +147,7 @@ model Account {
 
   transactions Transaction[]
   cards        Card[]
+  bills        Bill[]
 }
 
 model Card {
@@ -164,6 +166,7 @@ model Card {
 
   invoices Invoice[]
   transactions Transaction[]
+  bills        Bill[]
 }
 
 model Invoice {
@@ -182,17 +185,41 @@ model Invoice {
 }
 
 model Bill {
-  id          Int       @id @default(autoincrement())
-  description String
-  amount      Decimal   @db.Decimal(10, 2)
-  dueDate     DateTime
-  isPaid      Boolean   @default(false)
-  recurring   String? // ex: monthly, yearly
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
-  categoryId  Int
-  category    Category  @relation(fields: [categoryId], references: [id])
-  active      Boolean   @default(true)
+  id          Int      @id @default(autoincrement())
+  description String 
+  amount      Decimal  @db.Decimal(10, 2)
+  dueDateDay  Int?
+  recurring   String   // "MONTHLY", "ANNUALLY", "NONE"
+  active      Boolean  @default(true)
 
-  @@index([userId])
+  accountId   Int?     // Vinculada a uma conta (débito)
+  cardId      Int?     // Ou vinculada a um cartão (crédito)
+  
+  userId      Int
+  categoryId  Int
+
+  user        User     @relation(fields: [userId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id])
+  account     Account? @relation(fields: [accountId], references: [id])
+  card        Card?    @relation(fields: [cardId], references: [id])
+  
+  // Relação: Uma regra gera vários pagamentos
+  payments    BillPayment[]
+}
+
+model BillPayment {
+  id            Int       @id @default(autoincrement())
+  dueDate       DateTime
+  paymentDate   DateTime?
+  status        String    @default("PENDING") // "PENDING", "PAID", "OVERDUE"
+  amount        Decimal   @db.Decimal(10, 2)
+
+  billId        Int
+  bill          Bill      @relation(fields: [billId], references: [id])
+
+  // quando paga, gera uma transação
+  transactionId Int?      @unique
+  transaction   Transaction? @relation(fields: [transactionId], references: [id])
+
+  @@index([billId])
 }
