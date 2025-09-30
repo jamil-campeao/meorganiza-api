@@ -51,3 +51,38 @@ export const getBankById = async (req, res) => {
     return res.status(500).json({ message: "Erro ao buscar o banco." });
   }
 };
+
+export const putBank = async (req, res) => {
+  const { id, name, logo } = req.body
+
+  const data = {}
+
+  if (name) data.name = name
+  if (logo) data.logo = logo
+
+  try {
+    if (!id) {
+      return res.status(400).json({ message: "O id do banco é obrigatório." })
+    }
+    
+    const bank = await prisma.bank.findUnique({
+      where: { id }
+    })
+
+    if (!bank) {
+      return res.status(404).json({ message: "Banco não encontrado"})
+    }
+
+    const updatedBank = await prisma.bank.update({
+      where: { id },
+      data: data
+    })
+
+    return res.status(200).json(updatedBank)
+
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: "Erro ao atualizar banco"})
+    
+  }
+}
