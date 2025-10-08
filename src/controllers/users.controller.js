@@ -2,11 +2,13 @@ import bcrypt from "bcryptjs";
 import prisma from "../db/client.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { receipts, spends } from "../sugestioncategories.js";
+import { TransactionType } from "@prisma/client";
 
 export const insertUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, createCategories } = req.body;
 
-  if (!name || !email || !password) {
+  if (!name || !email || !password || !createCategories) {
     return res
       .status(400)
       .json({ message: "Todos os campos são obrigatórios." });
@@ -30,6 +32,28 @@ export const insertUser = async (req, res) => {
         password: hashedPassword,
       },
     });
+
+    if (createCategories) {
+      for (const receipt of receipts) {
+        await prisma.category.create({
+          data: {
+            description: receipt,
+            type: TransactionType.RECEITA,
+            userId: newUser.id,
+          },
+        });
+      }
+
+      for (const spend of spends) {
+        await prisma.category.create({
+          data: {
+            description: spend,
+            type: TransactionType.DESPESA,
+            userId: newUser.id,
+          },
+        });
+      }
+    }
 
     const { password: _, ...userWithoutPassword } = newUser;
 
