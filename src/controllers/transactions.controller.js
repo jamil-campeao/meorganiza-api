@@ -89,12 +89,12 @@ export const insertTransaction = async (req, res) => {
       });
     }
 
-    try {
-      let newTransaction;
+    const { installments = 1 } = req.body;
 
+    try {
       // Despesa na CONTA (Débito)
       if (accountId) {
-        const [transaction, updatedAccount] = await prisma.$transaction([
+        const [newTransaction] = await prisma.$transaction([
           prisma.transaction.create({
             data: {
               type: TransactionType.DESPESA,
@@ -111,7 +111,7 @@ export const insertTransaction = async (req, res) => {
             data: { balance: { decrement: transactionValue } },
           }),
         ]);
-        newTransaction = transaction;
+        return res.status(201).json(newTransaction);
       }
 
       // Despesa no CARTÃO (Crédito)
@@ -125,42 +125,54 @@ export const insertTransaction = async (req, res) => {
           });
         }
 
-        // Calcula a data da fatura
-        const { month, year } = getInvoiceDate(date, card.closingDay);
+        await prisma.$transaction(async (tx) => {
+          const installmentValue = parseFloat(
+            (transactionValue / installments).toFixed(2)
+          );
 
-        const invoice = await prisma.invoice.upsert({
-          where: {
-            cardId_month_year: { cardId: card.id, month, year },
-          },
-          update: {
-            // Se a fatura já existe, apenas atualiza o valor
-            totalAmount: { increment: transactionValue },
-          },
-          create: {
-            // Se não existe, cria uma nova
-            month,
-            year,
-            totalAmount: transactionValue,
-            cardId: card.id,
-          },
+          for (let i = 0; i < installments; i++) {
+            const installmentDate = new Date(date);
+            installmentDate.setMonth(installmentDate.getMonth() + i);
+
+            const { month, year } = getInvoiceDate(
+              installmentDate,
+              card.closingDay
+            );
+
+            const invoice = await tx.invoice.upsert({
+              where: {
+                cardId_month_year: { cardId: card.id, month, year },
+              },
+              update: {
+                totalAmount: { increment: installmentValue },
+              },
+              create: {
+                month,
+                year,
+                totalAmount: installmentValue,
+                cardId: card.id,
+              },
+            });
+
+            await tx.transaction.create({
+              data: {
+                type: TransactionType.DESPESA,
+                value: installmentValue,
+                date: installmentDate,
+                description: `${description} (${i + 1}/${installments})`,
+                userId,
+                categoryId,
+                cardId: card.id,
+                invoiceId: invoice.id,
+              },
+            });
+          }
         });
 
-        // Cria a transação e a associa à fatura
-        newTransaction = await prisma.transaction.create({
-          data: {
-            type: TransactionType.DESPESA,
-            value: transactionValue,
-            date: new Date(date),
-            description,
-            userId,
-            categoryId,
-            cardId: card.id,
-            invoiceId: invoice.id, // <<-- VÍNCULO COM A FATURA
-          },
+        return res.status(201).json({
+          message: `Compra parcelada em ${installments}x criada com sucesso.`,
         });
       }
-
-      return res.status(201).json(newTransaction);
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: "Erro ao inserir a despesa." });
