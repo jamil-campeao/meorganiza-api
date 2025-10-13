@@ -3,20 +3,33 @@ import { TransactionType } from "@prisma/client";
 
 // Função para determinar o mês e ano da fatura
 const getInvoiceDate = (transactionDate, closingDay) => {
-  let date = new Date(transactionDate);
-  let month = date.getMonth() + 1; // getMonth() é 0-11
-  let year = date.getFullYear();
+  let transDate = new Date(transactionDate);
 
-  // Se a data da transação for igual ou maior que o dia de fechamento,
-  // a despesa entra na fatura do mês seguinte.
-  if (date.getDate() > closingDay) {
-    month += 1;
-    if (month > 12) {
-      month = 1;
-      year += 1;
+  // Define o fuso horário para UTC para evitar problemas com a virada do dia
+  transDate.setUTCHours(0, 0, 0, 0);
+
+  // A data de fechamento da fatura do mês da transação
+  let closingDate = new Date(
+    transDate.getFullYear(),
+    transDate.getMonth(),
+    closingDay
+  );
+  closingDate.setUTCHours(23, 59, 59, 999); // Garante que o dia inteiro seja considerado
+
+  let invoiceMonth = transDate.getMonth() + 1;
+  let invoiceYear = transDate.getFullYear();
+
+  // Se a data da transação for APÓS o dia de fechamento daquele mês,
+  // a fatura pertence ao próximo mês.
+  if (transDate.getTime() > closingDate.getTime()) {
+    invoiceMonth += 1;
+    if (invoiceMonth > 12) {
+      invoiceMonth = 1;
+      invoiceYear += 1;
     }
   }
-  return { month, year };
+
+  return { month: invoiceMonth, year: invoiceYear };
 };
 
 export const insertTransaction = async (req, res) => {
@@ -453,5 +466,50 @@ export const deleteTransaction = async (req, res) => {
     return res
       .status(500)
       .json({ message: error.message || "Erro ao excluir a transação." });
+  }
+};
+
+export const getAllTransactionsForUser = async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        userId: parseInt(userId),
+      },
+      select: {
+        date: true,
+        type: true,
+        value: true,
+        description: true,
+        category: {
+          select: {
+            description: true,
+          },
+        },
+      },
+      orderBy: {
+        date: "asc",
+      },
+    });
+
+    // res.status(200).send(transactions);
+
+    // Formata os dados em um CSV simples, que é ótimo para a IA entender
+    const csvData = transactions
+      .map(
+        (t) =>
+          `${t.date.toISOString().split("T")[0]},${t.type},${t.value},"${
+            t.category.description
+          }","${t.description}"`
+      )
+      .join("\n");
+
+    res.header("Content-Type", "text/csv");
+    return res.status(200).send(csvData);
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Erro ao buscar o histórico de transações." });
   }
 };
