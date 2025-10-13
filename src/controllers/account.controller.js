@@ -185,3 +185,23 @@ export const getAccountById = async (req, res) => {
     return res.status(500).json({ message: "Erro ao buscar a conta." });
   }
 };
+
+export const getTotalBalance = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const accounts = await prisma.account.findMany({
+      where: { userId: parseInt(userId) },
+    });
+
+    const totalBalance = accounts.reduce(
+      (sum, acc) => sum + parseFloat(acc.balance),
+      0
+    );
+
+    return res.status(200).json({ totalBalance });
+  } catch (error) {
+    console.error("Erro ao buscar saldo total:", error);
+    return res.status(500).json({ message: "Erro ao buscar saldo total." });
+  }
+};

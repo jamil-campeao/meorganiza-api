@@ -6,11 +6,15 @@ import {
   getTransactionById,
   insertTransaction,
   updateTransaction,
+  getAllTransactionsForUser,
 } from "../controllers/transactions.controller.js";
 
 const router = Router();
 
 router.use(authenticateUser);
+
+//rotas-n8n
+router.get("/history", getAllTransactionsForUser);
 
 router.post("/", insertTransaction);
 router.get("/", getAllTransactions);

@@ -7,12 +7,14 @@ import {
   getAllAccounts,
   insertAccount,
   updateAccount,
+  getTotalBalance,
 } from "../controllers/account.controller.js";
 
 const router = Router();
 
 router.use(authenticateUser);
 
+router.get("/total-balance", getTotalBalance);
 router.post("/", insertAccount);
 router.get("/", getAllAccounts);
 router.get("/:id", getAccountById);
