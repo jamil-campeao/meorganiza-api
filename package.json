@@ -8,7 +8,8 @@
     "prisma-migration": "npx prisma migrate dev --name init",
     "start": "npm run prisma-migration && npm run db:seed && node index.js",
     "dev": "npm run prisma-migration && npm run db:seed && npx nodemon index.js",
-    "db:seed": "npx prisma db seed"
+    "db:seed": "npx prisma db seed",
+    "db:seed-test": "node prisma/seed-test-environment.js"
   },
   "keywords": [],
   "author": "",
