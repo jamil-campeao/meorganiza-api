@@ -94,14 +94,15 @@ export const handleChatMessage = async (req, res) => {
 /**
  * Busca o histórico de uma sessão de chat específica ou todas as sessões do usuário.
  */
-export const getChatHistory = async (req, res) => {
+export const getLastActiveChat = async (req, res) => {
     const userId = req.user.id;
     const { conversationId } = req.params;
 
     try {
         if (conversationId) {
+            console.log("ENTREI AQUI NESSE PRIMEIRO IF")
             // Busca mensagens de uma conversa específica
-            const messages = await prisma.chatMessage.findMany({
+            const messages = await prisma.chatMessage.findFirst({
                 where: {
                     chatSessionId: conversationId,
                     chatSession: {
@@ -126,19 +127,76 @@ export const getChatHistory = async (req, res) => {
         } else {
             // Busca todas as sessões de chat do usuário
             const sessions = await prisma.chatSession.findMany({
-                where: { userId: userId },
+                where: { userId: userId, active: true },
                 orderBy: { updatedAt: 'desc' },
-                include: {
-                    _count: {
-                        select: { messages: true }
+                select: {
+                    id: true,
+                    updatedAt: true,
+                    messages: {
+                        orderBy: {
+                            createdAt: 'asc'
+                        },
+                        select: {
+                            sender: true,
+                            content: true
+                        }
                     }
                 }
             });
-            return res.status(200).json(sessions);
-        }
+
+            if (!sessions || sessions.length === 0) {
+                return res.status(404).json({ message: "Nenhuma sessão de chat encontrada." });
+            }
+
+            const formattedSessions = sessions.map(session => {
+                return {
+                    ...session,
+                    messages: session.messages.map(message => {
+                        return {
+                            sender: message.sender,
+                            text: message.content
+                        };
+                    })
+                };
+            });
+
+            return res.status(200).json(formattedSessions);
+          }
     } catch (error) {
         console.error("Erro ao buscar histórico do chat:", error);
         return res.status(500).json({ message: "Erro ao buscar histórico do chat." });
     }
 }
+
+export const finishChat = async (req, res) => {
+  const userId = req.user.id;
+  const { conversationId } = req.body;
+
+  try {
+    const session = await prisma.chatSession.findFirst({
+        where: {
+            id: conversationId,
+            userId: userId
+        }
+    });
+
+    if (!session) {
+        return res.status(404).json({ message: "Sessão de chat não encontrada ou não pertence a este usuário." });
+    }
+
+    await prisma.chatSession.update({
+      where: { 
+        id: conversationId,
+       },
+      data: { active: false },
+    });
+
+    return res.status(200).json({ message: "Conversa finalizada com sucesso." });
+  }
+  catch (error) {
+    console.error("Erro ao finalizar chat:", error);
+    return res.status(500).json({ message: "Erro ao finalizar chat." });
+  }
+}
+
 
