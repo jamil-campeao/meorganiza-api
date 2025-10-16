@@ -26,6 +26,11 @@ enum CardType {
   DEBITO
 }
 
+enum ChatMessageSender {
+  USER
+  AI
+}
+
 // --- Models ---
 
 model User {
@@ -47,6 +52,7 @@ model User {
   cards                   Card[]
   bills                   Bill[]
   userToken               UserToken[]
+  chatSessions            ChatSession[]
 }
 
 model Transaction {
@@ -235,4 +241,32 @@ model UserToken {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+
+// Representa uma sessão/conversa inteira
+model ChatSession {
+  id        String      @id @default(cuid()) // Gera um ID de string único automaticamente
+  userId    Int
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  active    Boolean     @default(true)
+
+  messages  ChatMessage[]
+
+  @@index([userId])
+}
+
+model ChatMessage {
+  id              Int               @id @default(autoincrement())
+  content         String            @db.Text
+  sender          ChatMessageSender // 'USER' ou 'AI'
+  
+  chatSessionId   String
+  chatSession     ChatSession       @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime          @default(now())
+
+  @@index([chatSessionId])
 }

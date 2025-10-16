@@ -13,6 +13,7 @@ import cardRoutes from "./card.routes.js";
 import invoiceRoutes from "./invoice.routes.js";
 import billRoutes from "./bill.routes.js";
 import reportRoutes from "./report.routes.js";
+import chatRoutes from "./chat.routes.js";
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use("/card", cardRoutes);
 router.use("/invoice", invoiceRoutes);
 router.use("/bill", billRoutes);
 router.use("/report", reportRoutes);
+router.use("/chat", chatRoutes);
 
 export default router;
