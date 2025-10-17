@@ -124,3 +124,54 @@ export const getMonthlySummary = async (req, res) => {
     return res.status(500).json({ message: "Erro ao gerar o resumo mensal." });
   }
 };
+
+export const generateAIReport = async (req, res) => {
+  const userId = req.user.id;
+  const { query } = req.body;
+  const n8nWebhookUrl = process.env.N8N_AI_REPORT_WEBHOOK_URL;
+
+  if (!question) {
+    return res.status(400).json({ message: "A question é obrigatória." });
+  }
+
+  if (!n8nWebhookUrl) {
+    return res.status(500).json({ message: "Webhook de relatórios não configurado." });
+  }
+
+  try {
+    const n8nResponse = await fetch(n8nWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, query }),
+    });
+
+    if (!n8nResponse.ok) {
+      const errorBody = await n8nResponse.json();
+      throw new Error(errorBody.message || "Ocorreu um erro ao gerar o relatório.");
+    }
+
+    const reportData = await n8nResponse.json();
+
+    if (!reportData || !reportData.output) {
+      return res.status(400).json({ message: "Ocorreu um erro ao gerar o relatório." });
+    }
+
+    const { title, displayType, data } = aiResponse.output;
+
+    const newReport = await prisma.generatedReport.create({
+      data: {
+        userId,
+        userQuestion,
+        title,
+        displayType,
+        data,
+      },
+    });
+
+    return res.status(201).json(newReport);
+
+  } catch (error) {
+    console.error("Erro no fluxo de relatório AI:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};

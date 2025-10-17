@@ -53,6 +53,7 @@ model User {
   bills                   Bill[]
   userToken               UserToken[]
   chatSessions            ChatSession[]
+  generatedReports        GeneratedReport[]
 }
 
 model Transaction {
@@ -269,4 +270,18 @@ model ChatMessage {
   createdAt       DateTime          @default(now())
 
   @@index([chatSessionId])
+}
+
+model GeneratedReport {
+  id           String   @id @default(cuid())
+  title        String 
+  displayType  String
+  data         Json 
+  userQuestion String?
+  createdAt    DateTime @default(now())
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
 }
