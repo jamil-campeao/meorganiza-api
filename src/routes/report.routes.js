@@ -3,6 +3,7 @@ import { authenticateUser } from "../services/authentication.js";
 import {
   getExpensesByCategory,
   getMonthlySummary,
+  generateAIReport,
 } from "../controllers/report.controller.js";
 
 const router = Router();
@@ -11,5 +12,7 @@ router.use(authenticateUser);
 router.get("/expenses-by-category", getExpensesByCategory);
 // Exemplo de uso: GET /api/report/monthly-summary?year=2025
 router.get("/monthly-summary", getMonthlySummary);
+
+router.post("/ai-generate", generateAIReport);
 
 export default router;
