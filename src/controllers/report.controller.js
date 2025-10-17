@@ -126,52 +126,75 @@ export const getMonthlySummary = async (req, res) => {
 };
 
 export const generateAIReport = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user?.id;
   const { query } = req.body;
   const n8nWebhookUrl = process.env.N8N_AI_REPORT_WEBHOOK_URL;
 
-  if (!question) {
-    return res.status(400).json({ message: "A question é obrigatória." });
+  // Validações iniciais
+  if (!query) {
+    return res.status(400).json({ message: "A pergunta (query) é obrigatória." });
   }
 
   if (!n8nWebhookUrl) {
     return res.status(500).json({ message: "Webhook de relatórios não configurado." });
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 240000); // 4 minutos
+
   try {
     const n8nResponse = await fetch(n8nWebhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, query }),
+      signal: controller.signal,
     });
 
+    clearTimeout(timeoutId);
+
     if (!n8nResponse.ok) {
-      const errorBody = await n8nResponse.json();
-      throw new Error(errorBody.message || "Ocorreu um erro ao gerar o relatório.");
+      // tenta extrair corpo de erro, se existir
+      let errorMessage = "Ocorreu um erro ao gerar o relatório no N8N.";
+      try {
+        const errorBody = await n8nResponse.json();
+        errorMessage = errorBody.message || errorMessage;
+      } catch {
+        // ignora se não for JSON
+      }
+      throw new Error(errorMessage);
     }
 
+    // Tenta converter o corpo para JSON
     const reportData = await n8nResponse.json();
 
-    if (!reportData || !reportData.output) {
-      return res.status(400).json({ message: "Ocorreu um erro ao gerar o relatório." });
+    if (!Array.isArray(reportData) || !reportData[0]?.output) {
+      return res.status(400).json({ message: "Resposta inesperada do N8N." });
     }
 
-    const { title, displayType, data } = aiResponse.output;
+    const { title, displayType, data } = reportData[0].output;
 
+    // Salva no banco
     const newReport = await prisma.generatedReport.create({
       data: {
         userId,
-        userQuestion,
+        userQuestion: query,
         title,
         displayType,
-        data,
+        data: typeof data === 'object' ? JSON.stringify(data) : data,
       },
     });
 
     return res.status(201).json(newReport);
 
   } catch (error) {
+    clearTimeout(timeoutId); // segurança extra
+
+    if (error.name === 'AbortError') {
+      console.error('Tempo limite atingido ao gerar relatório.');
+      return res.status(504).json({ message: 'A geração do relatório demorou demais e foi cancelada.' });
+    }
+
     console.error("Erro no fluxo de relatório AI:", error);
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message || "Erro interno no servidor." });
   }
 };
