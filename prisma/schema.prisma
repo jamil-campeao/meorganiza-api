@@ -124,12 +124,13 @@ model BankStatement {
 }
 
 model BalanceForecast {
-  id            Int      @id @default(autoincrement()) 
-  futureBalance Decimal  @db.Decimal(10, 2)
-  forecastDate  DateTime 
-  
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
+  id              Int      @id @default(autoincrement())
+  futureBalance   Decimal  @db.Decimal(10, 2)
+  forecastDate    DateTime
+  analysisSummary String   @db.Text
+
+  user            User     @relation(fields: [userId], references: [id])
+  userId          Int
 }
 
 model Bank {
