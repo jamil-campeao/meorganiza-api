@@ -53,6 +53,7 @@ model User {
   bills                   Bill[]
   userToken               UserToken[]
   chatSessions            ChatSession[]
+  generatedReports        GeneratedReport[]
 }
 
 model Transaction {
@@ -124,12 +125,13 @@ model BankStatement {
 }
 
 model BalanceForecast {
-  id            Int      @id @default(autoincrement()) 
-  futureBalance Decimal  @db.Decimal(10, 2)
-  forecastDate  DateTime 
-  
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
+  id              Int      @id @default(autoincrement())
+  futureBalance   Decimal  @db.Decimal(10, 2)
+  forecastDate    DateTime
+  analysisSummary String   @db.Text
+
+  user            User     @relation(fields: [userId], references: [id])
+  userId          Int
 }
 
 model Bank {
@@ -269,4 +271,18 @@ model ChatMessage {
   createdAt       DateTime          @default(now())
 
   @@index([chatSessionId])
+}
+
+model GeneratedReport {
+  id           String   @id @default(cuid())
+  title        String 
+  displayType  String
+  data         Json 
+  userQuestion String?
+  createdAt    DateTime @default(now())
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
 }
