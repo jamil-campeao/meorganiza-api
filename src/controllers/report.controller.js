@@ -130,6 +130,7 @@ export const generateAIReport = async (req, res) => {
   const userId = req.user.id;
   const { query } = req.body;
   const n8nWebhookUrl = process.env.N8N_AI_REPORT_WEBHOOK_URL;
+  const n8ntoken = process.env.N8N_TOKEN;
 
   // Validações iniciais
   if (!query) {
@@ -150,7 +151,10 @@ export const generateAIReport = async (req, res) => {
   try {
     const n8nResponse = await fetch(n8nWebhookUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        token: n8ntoken,
+      },
       body: JSON.stringify({ userId, query }),
       signal: controller.signal,
     });
