@@ -19,11 +19,9 @@ export const handleChatMessage = async (req, res) => {
   }
 
   if (!n8nWebhookUrl) {
-    return res
-      .status(500)
-      .json({
-        message: "O Webhook do assistente IA não está configurado no servidor.",
-      });
+    return res.status(500).json({
+      message: "O Webhook do assistente IA não está configurado no servidor.",
+    });
   }
 
   try {
@@ -42,7 +40,10 @@ export const handleChatMessage = async (req, res) => {
     // Envia a pergunta para o n8n e aguarda a resposta da IA
     const n8nResponse = await fetch(n8nWebhookUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json", token: n8ntoken },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${n8ntoken}`,
+      },
       body: JSON.stringify({
         question: question,
         conversationId: currentConversationId,
@@ -95,11 +96,9 @@ export const handleChatMessage = async (req, res) => {
     });
   } catch (error) {
     console.error("Erro no fluxo do chat:", error);
-    return res
-      .status(500)
-      .json({
-        message: error.message || "Erro ao processar a mensagem do chat.",
-      });
+    return res.status(500).json({
+      message: error.message || "Erro ao processar a mensagem do chat.",
+    });
   }
 };
 
@@ -197,12 +196,10 @@ export const finishChat = async (req, res) => {
     });
 
     if (!session) {
-      return res
-        .status(404)
-        .json({
-          message:
-            "Sessão de chat não encontrada ou não pertence a este usuário.",
-        });
+      return res.status(404).json({
+        message:
+          "Sessão de chat não encontrada ou não pertence a este usuário.",
+      });
     }
 
     await prisma.chatSession.update({

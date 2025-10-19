@@ -15,7 +15,10 @@ export const generatePrediction = async (req, res) => {
   try {
     const n8nResponse = await fetch(n8nWebhookUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json", token: n8nToken },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${n8nToken}`,
+      },
       body: JSON.stringify({ userId: userId }),
     });
 

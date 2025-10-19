@@ -153,7 +153,7 @@ export const generateAIReport = async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        token: n8ntoken,
+        Authorization: `Bearer ${n8ntoken}`,
       },
       body: JSON.stringify({ userId, query }),
       signal: controller.signal,
