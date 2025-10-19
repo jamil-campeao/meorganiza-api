@@ -4,6 +4,8 @@ import {
   getExpensesByCategory,
   getMonthlySummary,
   generateAIReport,
+  getGeneratedReports,
+  deleteGeneratedReport,
 } from "../controllers/report.controller.js";
 
 const router = Router();
@@ -14,5 +16,7 @@ router.get("/expenses-by-category", getExpensesByCategory);
 router.get("/monthly-summary", getMonthlySummary);
 
 router.post("/ai-generate", generateAIReport);
+router.get("/ai-generated", getGeneratedReports);
+router.delete("/ai-generated/:id", deleteGeneratedReport);
 
 export default router;
