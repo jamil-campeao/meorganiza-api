@@ -14,6 +14,7 @@ import invoiceRoutes from "./invoice.routes.js";
 import billRoutes from "./bill.routes.js";
 import reportRoutes from "./report.routes.js";
 import chatRoutes from "./chat.routes.js";
+import debtRoutes from "./debt.routes.js";
 
 const router = Router();
 
@@ -32,5 +33,6 @@ router.use("/invoice", invoiceRoutes);
 router.use("/bill", billRoutes);
 router.use("/report", reportRoutes);
 router.use("/chat", chatRoutes);
+router.use("/debt", debtRoutes);
 
 export default router;
