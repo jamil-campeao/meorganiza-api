@@ -1,5 +1,6 @@
 import prisma from "../db/client.js";
 import fetch from "node-fetch";
+import { ChatSessionType } from "@prisma/client";
 
 /**
  * Gerencia o envio de mensagens para o n8n e salva o histórico da conversa.
@@ -60,15 +61,26 @@ export const handleChatMessage = async (req, res) => {
     }
 
     const aiData = await n8nResponse.json();
-    const aiResponseText = aiData.output.prompt;
+    const aiResponseText = aiData.output;
+    const typeChat = aiData.type;
 
     if (!aiResponseText) {
       throw new Error("O assistente IA retornou uma resposta vazia.");
     }
 
     // Uso uma transação para garantir que a pergunta e a resposta sejam salvas juntas.
+    //1 - Atualizo o tipo do chat que o n8n me retornou para usar nas próximas
     const aiResponse = await prisma.$transaction(async (tx) => {
-      // 1. Salva a mensagem do usuário no banco de dados
+      await tx.chatSession.update({
+        where: {
+          id: currentConversationId,
+        },
+        data: {
+          type: ChatSessionType[typeChat],
+        },
+      });
+
+      // 2. Salva a mensagem do usuário no banco de dados
       await tx.chatMessage.create({
         data: {
           content: question,
@@ -77,7 +89,7 @@ export const handleChatMessage = async (req, res) => {
         },
       });
 
-      // 2. Salva a resposta da IA no banco de dados
+      // 3. Salva a resposta da IA no banco de dados
       const savedAiMessage = await tx.chatMessage.create({
         data: {
           content: aiResponseText,

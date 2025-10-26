@@ -11,7 +11,7 @@ datasource db {
 enum TransactionType {
   RECEITA // "receita"
   DESPESA // "despesa"
-  TRANSFERENCIA 
+  TRANSFERENCIA
 }
 
 enum AccountType {
@@ -31,56 +31,81 @@ enum ChatMessageSender {
   AI
 }
 
+enum ChatSessionType {
+  DUVIDAS_GERAIS
+  DIVIDAS
+  INVESTIMENTOS
+}
+
+enum DebtStatus {
+  ACTIVE // Dívida em andamento
+  PAID_OFF // Dívida quitada
+  PENDING // Dívida planejada, mas ainda não ativa (ex: empréstimo aprovado)
+  CANCELLED // Dívida cancelada
+}
+
+enum DebtType {
+  CREDIT_CARD // Fatura de Cartão de Crédito (embora já tenha Invoice, pode ser útil registrar separadamente)
+  PERSONAL_LOAN // Empréstimo Pessoal
+  AUTO_LOAN // Financiamento de Veículo
+  STUDENT_LOAN // Financiamento Estudantil
+  MORTGAGE // Financiamento Imobiliário
+  OVERDRAFT // Cheque Especial
+  RETAIL_FINANCING // Financiamento de Loja (Carnê)
+  OTHER // Outros
+}
+
 // --- Models ---
 
 model User {
-  id                      Int               @id @default(autoincrement()) 
-  name                    String            
-  email                   String            @unique 
-  password                String            
-  notificationPreference  String?           
-  createdAt               DateTime          @default(now())
-  active                  Boolean           @default(true)
+  id                     Int      @id @default(autoincrement())
+  name                   String
+  email                  String   @unique
+  password               String
+  notificationPreference String?
+  createdAt              DateTime @default(now())
+  active                 Boolean  @default(true)
 
-  transactions            Transaction[]
-  investments             Investment[]
-  notifications           Notification[]
-  bankStatements          BankStatement[]
-  balanceForecasts        BalanceForecast[]
-  category                Category[]
-  accounts                Account[]
-  cards                   Card[]
-  bills                   Bill[]
-  userToken               UserToken[]
-  chatSessions            ChatSession[]
-  generatedReports        GeneratedReport[]
+  transactions     Transaction[]
+  investments      Investment[]
+  notifications    Notification[]
+  bankStatements   BankStatement[]
+  balanceForecasts BalanceForecast[]
+  category         Category[]
+  accounts         Account[]
+  cards            Card[]
+  bills            Bill[]
+  userToken        UserToken[]
+  chatSessions     ChatSession[]
+  generatedReports GeneratedReport[]
+  Debt             Debt[]
 }
 
 model Transaction {
-  id          Int             @id @default(autoincrement()) 
+  id          Int             @id @default(autoincrement())
   type        TransactionType
-  value       Decimal         @db.Decimal(10, 2) 
-  date        DateTime        
-  description String          
-  
-  user        User            @relation(fields: [userId], references: [id])
-  userId      Int
-  category    Category        @relation(fields: [categoryId], references: [id])
-  categoryId  Int
-  account     Account?        @relation(fields: [accountId], references: [id])
-  accountId   Int?
-  card        Card?           @relation(fields: [cardId], references: [id])
-  cardId      Int?
-  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
-  invoiceId Int?
-  bills     BillPayment[]
-}
+  value       Decimal         @db.Decimal(10, 2)
+  date        DateTime
+  description String
 
+  user        User          @relation(fields: [userId], references: [id])
+  userId      Int
+  category    Category      @relation(fields: [categoryId], references: [id])
+  categoryId  Int
+  account     Account?      @relation(fields: [accountId], references: [id])
+  accountId   Int?
+  card        Card?         @relation(fields: [cardId], references: [id])
+  cardId      Int?
+  invoice     Invoice?      @relation(fields: [invoiceId], references: [id])
+  invoiceId   Int?
+  bills       BillPayment[]
+  debtPayment DebtPayment?
+}
 
 model Category {
   id          Int             @id @default(autoincrement())
-  description String          
-  type        TransactionType 
+  description String
+  type        TransactionType
   active      Boolean         @default(true)
   user        User            @relation(fields: [userId], references: [id])
   userId      Int
@@ -89,36 +114,34 @@ model Category {
   bills        Bill[]
 }
 
-
 model Investment {
-  id                Int       @id @default(autoincrement())
-  type              String    
-  description       String   
-  quantity          Decimal   @db.Decimal(10, 4) 
-  acquisitionValue  Decimal   @db.Decimal(10, 2) 
-  acquisitionDate   DateTime  
-  active            Boolean   @default(true)
+  id               Int      @id @default(autoincrement())
+  type             String
+  description      String
+  quantity         Decimal  @db.Decimal(10, 4)
+  acquisitionValue Decimal  @db.Decimal(10, 2)
+  acquisitionDate  DateTime
+  active           Boolean  @default(true)
 
-  user    User @relation(fields: [userId], references: [id])
-  userId  Int
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
 }
 
-
 model Notification {
-  id      Int       @id @default(autoincrement()) 
-  message String   
-  sentAt  DateTime  
-  read    Boolean   @default(false) 
+  id      Int      @id @default(autoincrement())
+  message String
+  sentAt  DateTime
+  read    Boolean  @default(false)
 
-  user    User      @relation(fields: [userId], references: [id])
-  userId  Int
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
 }
 
 model BankStatement {
-  id          Int       @id @default(autoincrement()) 
-  fileType    String    
-  importDate  DateTime 
-  fileName    String  
+  id         Int      @id @default(autoincrement())
+  fileType   String
+  importDate DateTime
+  fileName   String
 
   user   User @relation(fields: [userId], references: [id])
   userId Int
@@ -130,16 +153,17 @@ model BalanceForecast {
   forecastDate    DateTime
   analysisSummary String   @db.Text
 
-  user            User     @relation(fields: [userId], references: [id])
-  userId          Int
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
 }
 
 model Bank {
-  id   String    @id
+  id   String  @id
   name String
   logo String?
 
   accounts Account[]
+  debts    Debt[]
 }
 
 model Account {
@@ -149,10 +173,10 @@ model Account {
   balance Decimal     @db.Decimal(10, 2)
   active  Boolean     @default(true)
 
-  user    User        @relation(fields: [userId], references: [id])
-  userId  Int
-  bank    Bank        @relation(fields: [bankId], references: [id])
-  bankId  String
+  user   User   @relation(fields: [userId], references: [id])
+  userId Int
+  bank   Bank   @relation(fields: [bankId], references: [id])
+  bankId String
 
   transactions Transaction[]
   cards        Card[]
@@ -160,33 +184,33 @@ model Account {
 }
 
 model Card {
-  id          Int      @id @default(autoincrement())
-  name        String
-  type        CardType
-  limit       Decimal  @db.Decimal(10, 2)
-  closingDay  Int      // Dia do fechamento da fatura
-  dueDate     Int      // Dia do vencimento da fatura
-  active      Boolean  @default(true)
+  id         Int      @id @default(autoincrement())
+  name       String
+  type       CardType
+  limit      Decimal  @db.Decimal(10, 2)
+  closingDay Int // Dia do fechamento da fatura
+  dueDate    Int // Dia do vencimento da fatura
+  active     Boolean  @default(true)
 
-  user    User    @relation(fields: [userId], references: [id])
-  userId  Int
-  account Account @relation(fields: [accountId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int
+  account   Account @relation(fields: [accountId], references: [id])
   accountId Int
 
-  invoices Invoice[]
+  invoices     Invoice[]
   transactions Transaction[]
   bills        Bill[]
 }
 
 model Invoice {
-  id          Int       @id @default(autoincrement())
-  month       Int       // Mês da fatura (1-12)
-  year        Int       // Ano da fatura
-  totalAmount Decimal   @db.Decimal(10, 2)
-  isPaid      Boolean   @default(false)
+  id          Int     @id @default(autoincrement())
+  month       Int // Mês da fatura (1-12)
+  year        Int // Ano da fatura
+  totalAmount Decimal @db.Decimal(10, 2)
+  isPaid      Boolean @default(false)
 
-  card        Card      @relation(fields: [cardId], references: [id])
-  cardId      Int
+  card   Card @relation(fields: [cardId], references: [id])
+  cardId Int
 
   transactions Transaction[]
 
@@ -194,40 +218,40 @@ model Invoice {
 }
 
 model Bill {
-  id          Int      @id @default(autoincrement())
-  description String 
-  amount      Decimal  @db.Decimal(10, 2)
+  id          Int     @id @default(autoincrement())
+  description String
+  amount      Decimal @db.Decimal(10, 2)
   dueDateDay  Int?
-  recurring   String   // "MONTHLY", "ANNUALLY", "NONE"
-  active      Boolean  @default(true)
+  recurring   String // "MONTHLY", "ANNUALLY", "NONE"
+  active      Boolean @default(true)
 
-  accountId   Int?     // Vinculada a uma conta (débito)
-  cardId      Int?     // Ou vinculada a um cartão (crédito)
-  
-  userId      Int
-  categoryId  Int
+  accountId Int? // Vinculada a uma conta (débito)
+  cardId    Int? // Ou vinculada a um cartão (crédito)
 
-  user        User     @relation(fields: [userId], references: [id])
-  category    Category @relation(fields: [categoryId], references: [id])
-  account     Account? @relation(fields: [accountId], references: [id])
-  card        Card?    @relation(fields: [cardId], references: [id])
-  
+  userId     Int
+  categoryId Int
+
+  user     User     @relation(fields: [userId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+  account  Account? @relation(fields: [accountId], references: [id])
+  card     Card?    @relation(fields: [cardId], references: [id])
+
   // Relação: Uma regra gera vários pagamentos
-  payments    BillPayment[]
+  payments BillPayment[]
 }
 
 model BillPayment {
-  id            Int       @id @default(autoincrement())
-  dueDate       DateTime
-  paymentDate   DateTime?
-  status        String    @default("PENDING") // "PENDING", "PAID", "OVERDUE"
-  amount        Decimal   @db.Decimal(10, 2)
+  id          Int       @id @default(autoincrement())
+  dueDate     DateTime
+  paymentDate DateTime?
+  status      String    @default("PENDING") // "PENDING", "PAID", "OVERDUE"
+  amount      Decimal   @db.Decimal(10, 2)
 
-  billId        Int
-  bill          Bill      @relation(fields: [billId], references: [id])
+  billId Int
+  bill   Bill @relation(fields: [billId], references: [id])
 
   // quando paga, gera uma transação
-  transactionId Int?      @unique
+  transactionId Int?         @unique
   transaction   Transaction? @relation(fields: [transactionId], references: [id])
 
   @@index([billId])
@@ -245,44 +269,86 @@ model UserToken {
   @@index([userId])
 }
 
-
-// Representa uma sessão/conversa inteira
 model ChatSession {
-  id        String      @id @default(cuid()) // Gera um ID de string único automaticamente
+  id        String   @id @default(cuid()) // Gera um ID de string único automaticamente
   userId    Int
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  active    Boolean     @default(true)
+  type      ChatSessionType @default(DUVIDAS_GERAIS)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  active    Boolean  @default(true)
 
-  messages  ChatMessage[]
+  messages ChatMessage[]
 
   @@index([userId])
 }
 
 model ChatMessage {
-  id              Int               @id @default(autoincrement())
-  content         String            @db.Text
-  sender          ChatMessageSender // 'USER' ou 'AI'
-  
-  chatSessionId   String
-  chatSession     ChatSession       @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+  id      Int               @id @default(autoincrement())
+  content String            @db.Text
+  sender  ChatMessageSender // 'USER' ou 'AI'
 
-  createdAt       DateTime          @default(now())
+  chatSessionId String
+  chatSession   ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@index([chatSessionId])
 }
 
 model GeneratedReport {
   id           String   @id @default(cuid())
-  title        String 
+  title        String
   displayType  String
-  data         Json 
+  data         Json
   userQuestion String?
   createdAt    DateTime @default(now())
 
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
+}
+
+model Debt {
+  id                 Int        @id @default(autoincrement())
+  description        String
+  creditor           String?
+  type               DebtType
+  initialAmount      Decimal    @db.Decimal(10, 2)
+  outstandingBalance Decimal    @db.Decimal(10, 2)
+  interestRate       Decimal?   @db.Decimal(5, 2)
+  minimumPayment     Decimal?   @db.Decimal(10, 2)
+  paymentDueDate     Int?
+  startDate          DateTime
+  estimatedEndDate   DateTime?
+  status             DebtStatus @default(ACTIVE)
+
+  // Relação com Usuário
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  bank   Bank?   @relation(fields: [bankId], references: [id], onDelete: SetNull) // onDelete: SetNull ou Restrict
+  bankId String?
+
+  debtPayments DebtPayment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([bankId])
+}
+
+model DebtPayment {
+  id          Int      @id @default(autoincrement())
+  amount      Decimal  @db.Decimal(10, 2)
+  paymentDate DateTime
+  debtId      Int
+  debt        Debt     @relation(fields: [debtId], references: [id], onDelete: Cascade)
+
+  transactionId Int         @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+
+  @@index([debtId])
 }
