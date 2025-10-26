@@ -344,3 +344,37 @@ export const deleteDebt = async (req, res) => {
     return res.status(500).json({ message: "Erro ao deletar dívida" });
   }
 };
+
+export const getDebtPayments = async (req, res) => {
+  const userId = req.user.id;
+  const debtId = parseInt(req.params.id);
+
+  try {
+    const debt = await prisma.debt.findUnique({
+      where: {
+        id: debtId,
+        userId: userId,
+      },
+    });
+
+    if (!debt) {
+      return res.status(404).json({ message: "Dívida nao encontrada" });
+    }
+
+    const debtPayments = await prisma.debtPayment.findMany({
+      where: {
+        debtId: debtId,
+      },
+      include: {
+        transaction: true,
+      },
+    });
+
+    return res.status(200).json({
+      debtPayments,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Erro ao buscar pagamentos" });
+  }
+};

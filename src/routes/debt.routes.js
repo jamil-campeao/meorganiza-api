@@ -7,12 +7,14 @@ import {
   payDebt,
   updateDebt,
   deleteDebt,
+  getDebtPayments,
 } from "../controllers/debt.controller.js";
 
 const router = Router();
 
 router.use(authenticateUser);
 
+router.get("/payments/:id", getDebtPayments);
 router.post("/pay/:id", payDebt);
 router.post("/", insertDebt);
 router.get("/", getDebts);
