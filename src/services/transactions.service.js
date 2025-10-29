@@ -1,5 +1,5 @@
 import prisma from "../db/client.js";
-import { TransactionType } from "@prisma/client";
+import { TransactionType, Prisma } from "@prisma/client";
 
 // Função para determinar o mês e ano da fatura
 const getInvoiceDate = (transactionDate, closingDay) => {
