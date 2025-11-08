@@ -55,6 +55,15 @@ enum DebtType {
   OTHER // Outros
 }
 
+
+enum InvestmentType {
+  ACAO            // Ações (PETR4, MGLU3)
+  FII             // Fundo Imobiliário (MXRF11)
+  RENDA_FIXA_CDI  // CDBs, LCIs, LCAs atrelados ao CDI
+  POUPANCA        // Caderneta de Poupança
+  OUTRO           // Investimentos sem indexador (Cripto, etc)
+}
+
 // --- Models ---
 
 model User {
@@ -116,15 +125,23 @@ model Category {
 
 model Investment {
   id               Int      @id @default(autoincrement())
-  type             String
-  description      String
-  quantity         Decimal  @db.Decimal(10, 4)
-  acquisitionValue Decimal  @db.Decimal(10, 2)
-  acquisitionDate  DateTime
-  active           Boolean  @default(true)
+  type             InvestmentType
+  description      String   // Para Ação/FII: "PETR4". Para Renda Fixa: "CDB Banco X 110%"
+  quantity         Decimal? @db.Decimal(10, 4)
+  acquisitionValue Decimal? @db.Decimal(10, 2)
 
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
+  // --- Campos para Renda Fixa (CDI, Poupança) ---
+  initialAmount    Decimal? @db.Decimal(10, 2) // Valor total aportado (ex: R$ 10.000 no CDB)
+  acquisitionDate  DateTime
+  
+  // --- Campos de Rentabilidade (para Renda Fixa) ---
+  indexer          String?  //"CDI", "SELIC", "IPCA", "PRE" (Pré-fixado)
+  rate             Decimal? @db.Decimal(5, 2) // A taxa (ex: 110 para 110% do CDI, ou 12.5 para 12.5% a.a. no Pré)
+  maturityDate     DateTime? // Data de Vencimento (importante p/ Renda Fixa)
+
+  active           Boolean  @default(true)
+  user             User     @relation(fields: [userId], references: [id])
+  userId           Int
 }
 
 model Notification {
