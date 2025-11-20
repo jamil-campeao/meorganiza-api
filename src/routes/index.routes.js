@@ -16,6 +16,7 @@ import reportRoutes from "./report.routes.js";
 import chatRoutes from "./chat.routes.js";
 import debtRoutes from "./debt.routes.js";
 import n8nRoutes from "./n8n.routes.js";
+import mockDataRoutes from "./mockdata.routes.js";
 
 const router = Router();
 
@@ -36,5 +37,6 @@ router.use("/report", reportRoutes);
 router.use("/chat", chatRoutes);
 router.use("/debt", debtRoutes);
 router.use("/n8n", n8nRoutes);
+router.use("/mock-data", mockDataRoutes);
 
 export default router;
