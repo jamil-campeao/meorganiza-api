@@ -135,6 +135,16 @@ export const deleteCategory = async (req, res) => {
         .json({ message: "Categoria não pertence ao usuário." });
     }
 
+    const haveTransactions = await prisma.transaction.findFirst({
+      where: { categoryId: categoryId },
+    });
+
+    if (haveTransactions) {
+      return res
+        .status(400)
+        .json({ message: "Categoria possui transações, não pode ser excluída. Recomenda-se inativar a categoria." });
+    }
+
     await prisma.category.delete({
       where: { id: categoryId },
     });
