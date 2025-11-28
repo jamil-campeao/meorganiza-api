@@ -1,5 +1,6 @@
 import prisma from "../db/client.js";
-import { InvestmentType } from "@prisma/client";
+import Prisma from "@prisma/client";
+const { InvestmentType } = Prisma;
 
 export const insertInvestment = async (req, res) => {
   const userId = req.user.id;

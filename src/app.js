@@ -25,6 +25,7 @@ app.use(
     credentials: true,
   })
 );
+console.log("Mounting routes...");
 app.use(routes);
 
 export default app;

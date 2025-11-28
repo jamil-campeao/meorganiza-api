@@ -1,10 +1,11 @@
 import prisma from "../db/client.js";
-import {
+import Prisma from "@prisma/client";
+const {
   TransactionType,
   InvestmentType,
   DebtType,
   DebtStatus,
-} from "@prisma/client";
+} = Prisma;
 import bcrypt from "bcryptjs";
 import { receipts, spends } from "../sugestioncategories.js";
 
